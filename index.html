@@ -1,0 +1,852 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0b0d1f">
+<title>Звездочёт</title><script>
+(function(){function show(m){try{var d=document.getElementById("__err");if(!d){d=document.createElement("pre");d.id="__err";d.style.cssText="position:fixed;z-index:99999;left:0;right:0;top:0;max-height:60%;overflow:auto;margin:0;padding:8px;background:#300;color:#fff;font:11px/1.3 monospace;white-space:pre-wrap";(document.body||document.documentElement).appendChild(d);}d.textContent+=m+String.fromCharCode(10);}catch(e){}}
+window.onerror=function(m,u,l,c){show("JS: "+m+" @"+l+":"+c);};
+window.addEventListener("unhandledrejection",function(e){show("Promise: "+(e.reason&&e.reason.message||e.reason));});
+window.__show=show;})();
+</script>
+<style>
+:root{--h:250;--bg:#0b0d1f;--card:#171a36;--card2:#20244a;--txt:#eef0ff;--dim:#9aa0d0;--gold:#ffd36b;--acc:#8b6cff;--ok:#4ade80;--bad:#ff6b8a;--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:-apple-system,system-ui,"Segoe UI",Roboto,Arial,sans-serif;overflow:hidden;touch-action:manipulation;overscroll-behavior:none}
+#app{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;height:100vh;height:100dvh}
+#top{flex:none;padding:calc(var(--sat) + 6px) 14px 4px;text-align:center;background:linear-gradient(#0b0d1f,transparent);position:relative;z-index:3}
+#dust{font-size:30px;font-weight:800;color:var(--gold);letter-spacing:.5px;text-shadow:0 0 14px #ffb83a66}
+#pps{font-size:13px;color:var(--dim)}
+#chips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:3px;min-height:20px}
+.chip{font-size:12px;padding:2px 9px;border-radius:99px;background:var(--card2);color:var(--txt)}
+.chip.buff{background:#5b2dcc;animation:pulse 1.2s infinite}
+#goal{font-size:12px;color:var(--dim);margin-top:2px;min-height:15px}
+#goal i{display:block;height:3px;background:#2a2e5c;border-radius:2px;margin:3px auto 0;max-width:260px;overflow:hidden}
+#goal i b{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--gold));width:0}
+#sky{flex:0 0 31%;min-height:170px;position:relative;overflow:hidden}
+#bg{position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%}
+#orb{position:absolute;left:50%;top:50%;width:min(24vh,150px);height:min(24vh,150px);margin:calc(min(24vh,150px)/-2) 0 0 calc(min(24vh,150px)/-2);border-radius:50%;border:0;padding:0;font-size:min(11vh,64px);
+ background:radial-gradient(circle at 35% 30%,#fff7d0,#ffd36b 35%,hsl(calc(var(--h)),80%,55%) 75%,hsl(calc(var(--h)),70%,25%));box-shadow:0 0 40px hsl(var(--h),90%,60%,.55),0 0 90px hsl(var(--h),90%,60%,.25);transition:transform .08s;animation:float 4s ease-in-out infinite}
+#orb:active,#orb.p{transform:scale(.92)}
+.fl{position:absolute;font-weight:800;color:var(--gold);pointer-events:none;text-shadow:0 1px 6px #000;animation:up 1s ease-out forwards;font-size:18px;z-index:5;white-space:nowrap}
+.meteor{position:absolute;font-size:38px;z-index:4;padding:12px;margin:-12px;animation:fly var(--d,7s) linear forwards;filter:drop-shadow(0 0 8px #ffd36b);cursor:pointer}
+@keyframes fly{from{transform:translate(0,0) rotate(0)}to{transform:translate(var(--dx,-120vw),var(--dy,60px)) rotate(0)}}
+@keyframes up{to{transform:translateY(-70px);opacity:0}}
+@keyframes float{50%{transform:translateY(-5px)}}
+@keyframes pulse{50%{opacity:.7}}
+#panel{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 10px 14px;background:linear-gradient(#10132b,#0b0d1f)}
+#tabs{flex:none;display:flex;background:#0f1230;border-top:1px solid #2a2e5c;padding-bottom:var(--sab)}
+#tabs button{flex:1;border:0;background:none;color:var(--dim);padding:7px 0 6px;font-size:10px;display:flex;flex-direction:column;align-items:center;gap:1px;position:relative}
+#tabs button span{font-size:21px}
+#tabs button.on{color:var(--gold);background:#1a1e44}
+#tabs button.lock{opacity:.35}
+#tabs button.dot::after{content:"";position:absolute;top:4px;right:22%;width:9px;height:9px;border-radius:50%;background:var(--bad)}
+.row{display:flex;align-items:center;gap:9px;background:var(--card);border-radius:14px;padding:8px 10px;margin-bottom:7px;border:1px solid #262a58}
+.row.dim{opacity:.55}
+.ic{font-size:30px;width:40px;text-align:center;flex:none}
+.mid{flex:1;min-width:0}
+.mid b{font-size:15px}.mid small{display:block;color:var(--dim);font-size:12px;margin-top:1px}
+.own{color:var(--gold);font-weight:700;margin-left:4px}
+button.buy,button.btn{border:0;border-radius:12px;background:var(--acc);color:#fff;font-weight:700;font-size:14px;padding:9px 12px;min-width:92px;display:flex;flex-direction:column;align-items:center;line-height:1.15}
+button.buy small,button.btn small{font-weight:500;opacity:.85;font-size:11px}
+button.buy.no,button.btn.no{background:#2c3060;color:#8a90c0}
+button.btn{flex-direction:row;justify-content:center;gap:6px;min-width:0}
+button.btn.gold{background:linear-gradient(#ffd36b,#f0a52c);color:#3a2300}
+button.btn.red{background:#b3324f}
+.bar{display:flex;gap:6px;margin-bottom:8px}
+.bar button{flex:1;border:0;border-radius:10px;padding:8px 0;background:var(--card2);color:var(--dim);font-weight:700;font-size:13px}
+.bar button.on{background:var(--acc);color:#fff}
+h3{margin:12px 2px 6px;font-size:15px;color:var(--gold)}
+p.t{color:var(--dim);font-size:13px;line-height:1.4;margin:4px 2px}
+.prog{height:7px;border-radius:4px;background:#2a2e5c;overflow:hidden;margin-top:5px}
+.prog b{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--gold));width:0}
+.tip{background:#2b2170;border:1px solid var(--acc);border-radius:12px;padding:8px 11px;font-size:13px;margin-bottom:8px;line-height:1.35}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.stat{display:flex;justify-content:space-between;padding:7px 4px;border-bottom:1px solid #20244a;font-size:14px}.stat span:first-child{color:var(--dim)}
+.lv{display:flex;gap:3px;margin-top:4px}.lv i{width:16px;height:6px;border-radius:3px;background:#2c3060}.lv i.f{background:var(--gold)}
+.ach.done .ic{filter:none}.ach .ic{filter:grayscale(1) opacity(.5)}.ach.done{border-color:#7a6320}
+textarea{width:100%;height:84px;background:#0b0d1f;color:var(--txt);border:1px solid #2a2e5c;border-radius:10px;padding:8px;font-size:16px;-webkit-user-select:text;user-select:text;font-family:monospace}
+#modal{position:fixed;top:0;left:0;right:0;bottom:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:20;padding:20px}
+#modal.on{display:flex}
+#mbox{background:var(--card);border:1px solid var(--acc);border-radius:18px;padding:18px;max-width:420px;width:100%;max-height:82vh;overflow:auto;text-align:center}
+#mbox h2{margin:0 0 8px;color:var(--gold);font-size:20px}
+#mbox .big{font-size:48px}
+#mbox p{color:#cfd3ff;font-size:14px;line-height:1.45;margin:6px 0;text-align:left}
+#mbtn{display:flex;gap:8px;margin-top:12px}#mbtn button{flex:1}
+#toasts{position:fixed;left:0;right:0;top:calc(var(--sat) + 60px);z-index:30;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none}
+.toast{background:#2b2170ee;border:1px solid var(--acc);padding:7px 13px;border-radius:12px;font-size:13px;max-width:90%;animation:tin .25s,tout .4s 2.6s forwards}
+@keyframes tin{from{transform:translateY(-10px);opacity:0}}@keyframes tout{to{opacity:0}}
+</style>
+</head>
+<body><noscript style="color:#fff;padding:20px;display:block">Включи JavaScript в настройках Safari, чтобы играть.</noscript>
+<div id="app">
+ <div id="top"><div id="dust">0</div><div id="pps"></div><div id="chips"></div><div id="goal"></div></div>
+ <div id="sky"><canvas id="bg"></canvas><button id="orb" aria-label="Собрать пыль">⭐</button></div>
+ <div id="panel"></div>
+ <nav id="tabs"></nav>
+</div>
+<div id="modal"><div id="mbox"></div></div>
+<div id="toasts"></div>
+<script>
+'use strict';
+/* ===================== ЯДРО (без DOM) ===================== */
+const SAVE_KEY='zvezdochet_save_v1';
+let _now=()=>Date.now();
+const ui={toast(){},modal(){},haptic(){},sfx(){},unlock(){}};
+
+const SUF=['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','Ud','Dd','Td','Qd'];
+function fmt(n){
+  if(typeof n!=='number'||n!==n)return '0';
+  if(!isFinite(n))return n>0?'∞':'-∞';
+  if(n<0)return '-'+fmt(-n);
+  if(n<1000)return n<10?(Math.floor(n*10)/10).toString():Math.floor(n).toString();
+  let e=Math.floor(Math.log10(n)/3);
+  if(e>=SUF.length){const x=Math.floor(Math.log10(n));return (n/Math.pow(10,x)).toFixed(2)+'e'+x;}
+  let v=n/Math.pow(1000,e);
+  if(v>=999.995){v=1;e++;if(e>=SUF.length)return '1.00e'+(e*3);}
+  return v.toFixed(v<10?2:v<100?1:0)+SUF[e];
+}
+function fmtT(s){
+  s=Math.max(0,Math.ceil(s));
+  const h=Math.floor(s/3600),m=Math.floor(s%3600/60),c=s%60;
+  return h>0?h+'ч '+m+'м':m>0?m+'м '+(c<10?'0':'')+c+'с':c+'с';
+}
+
+const NAMES=[['Телескоп-любитель','🔭'],['Радиоантенна','📡'],['Спутник-сборщик','🛰️'],['Лунная станция','🌙'],['Орбитальный причал','🚀'],['Ловец комет','☄️'],['Кольцевая верфь','🪐'],['Солнечный жнец','☀️'],['Вихревой коллектор','🌀'],['Галактическая сеть','🌌'],['Квазар-ферма','🕳️'],['Сердце мироздания','✨']];
+const NB=NAMES.length;
+const BUILD=NAMES.map((x,i)=>({n:x[0],e:x[1],c:15*Math.pow(11,i),p:0.1*Math.pow(6.5,i),ep:i===10?2:i===11?4:0}));
+const GR=1.18;
+const MILE=[25,50,100,150,200,250,300,400];
+const BU=[[5,15,2],[25,500,2],[50,20000,3]];      // [нужно штук, цена×базовая, множитель]
+const GUP=[2e3,5e4,1e6,3e7,1e9,3e10,1e12,5e13,2e15,1e17];  // ×1.5 всему
+const TUP=[100,5e3,3e5,2e7,1e9,1e11];            // ×2 к тапу
+const EXP_AT=2e5;           // накоплено пыли за всё время — открываются экспедиции
+const PREST_K=1e9;          // знаменатель формулы Озарения
+const PREST_EXP=0.3;        // степень формулы Озарения
+const MISS=[
+ {n:'Окрестности',e:'🌍',t:120,sh:4,ep:0},
+ {n:'Горный перевал',e:'⛰️',t:600,sh:25,ep:0},
+ {n:'Тёмная пустошь',e:'🌑',t:1800,sh:90,ep:0},
+ {n:'Руины Древних',e:'🏛️',t:7200,sh:400,ep:1},
+ {n:'Край Туманности',e:'🌫️',t:28800,sh:1700,ep:3}];
+const PERKS=[
+ {id:'help',n:'Помощники',e:'🤝',d:'Старт эпохи: по 5 штук трёх первых построек за уровень',max:10,c:2,g:1.7},
+ {id:'sleep',n:'Долгий сон',e:'😴',d:'+2 ч к лимиту оффлайн-дохода',max:5,c:3,g:2.2},
+ {id:'calm',n:'Тихий ход',e:'🌙',d:'+10% эффективности оффлайн-дохода',max:5,c:4,g:2.4},
+ {id:'hand',n:'Золотая рука',e:'👆',d:'+1% производства к каждому тапу',max:10,c:2,g:1.6},
+ {id:'mind',n:'Мудрость мастера',e:'🧠',d:'−3% к цене построек',max:10,c:3,g:1.7},
+ {id:'speed',n:'Быстрые корабли',e:'⚡',d:'−6% времени экспедиций',max:8,c:4,g:1.9},
+ {id:'crew',n:'Больше экипажей',e:'👥',d:'+1 слот экспедиций',max:2,c:8,g:6},
+ {id:'pull',n:'Притяжение',e:'🧲',d:'Метеоры прилетают на 8% чаще',max:5,c:3,g:2},
+ {id:'echo',n:'Эхо созвездий',e:'🔔',d:'+10% осколков из экспедиций',max:10,c:5,g:1.7},
+ {id:'shine',n:'Сияние',e:'🌟',d:'+5% ко всему производству',max:20,c:5,g:1.45},
+ {id:'auto',n:'Автоинженер',e:'🤖',d:'Сам покупает постройки (включается в настройках)',max:1,c:25,g:1}];
+const CONS=[
+ {id:'ursa',n:'Большая Медведица',e:'🐻',d:'+10% ко всему производству'},
+ {id:'orion',n:'Орион',e:'🏹',d:'+25% к силе тапа'},
+ {id:'lyra',n:'Лира',e:'🎵',d:'+25% к награде метеоров'},
+ {id:'cygnus',n:'Лебедь',e:'🦢',d:'+15% осколков из экспедиций'},
+ {id:'cass',n:'Кассиопея',e:'👑',d:'−3% к цене построек'},
+ {id:'draco',n:'Дракон',e:'🐉',d:'+5% Озарения при новой эпохе'},
+ {id:'pegasus',n:'Пегас',e:'🐎',d:'−6% времени экспедиций'},
+ {id:'sag',n:'Стрелец',e:'🎯',d:'+1 ч к лимиту оффлайн-дохода'},
+ {id:'andro',n:'Андромеда',e:'🌠',d:'×1.15 постройкам №7–12'},
+ {id:'taurus',n:'Телец',e:'🐂',d:'×1.2 постройкам №1–6'},
+ {id:'scorp',n:'Скорпион',e:'🦂',d:'+20% длительности бурь от комет'},
+ {id:'pisces',n:'Рыбы',e:'🐟',d:'С 2 уровня: +1 слот экспедиций'}];
+CONS.forEach((c,j)=>{c.base=Math.round(5*Math.pow(1.7,j));c.max=5;});
+const CLVL=2.5;
+const DAILY=[
+ {t:'dust',v:20,txt:'20 минут производства'},{t:'shard',v:15,txt:'15 осколков'},{t:'buff',v:2,txt:'×2 производство на 20 минут'},
+ {t:'dust',v:90,txt:'1,5 часа производства'},{t:'shard',v:60,txt:'60 осколков'},{t:'buff',v:3,txt:'×3 производство на 20 минут'},
+ {t:'light',v:2,txt:'2 Озарения + 3 часа производства'}];
+
+function newState(){
+  return {v:1,dust:0,run:0,total:0,shards:0,lights:0,lightsTotal:0,epoch:0,
+    b:Array(NB).fill(0),up:{},perks:{},cons:{},exs:[],ach:{},buffs:[],
+    stats:{taps:0,meteors:0,bought:0,exps:0,play:0,earned:0,prestiges:0,maxPps:0,comets:0,bestGain:0,totalShards:0},
+    daily:{streak:0,last:'',claimed:''},quests:{date:'',list:[]},
+    set:{sound:false,haptic:true,auto:false,buy:1},unl:{exp:false,con:false,pres:false},
+    tut:0,seen:{},last:_now(),created:_now()};
+}
+let S=newState();
+
+/* ----- Эффекты ----- */
+let FX=null,PB=null;
+function dirty(){FX=null;PB=null;}
+function lvl(map,id){return map[id]||0;}
+function achCount(){let n=0;for(const k in S.ach)if(S.ach[k])n++;return n;}
+function fx(){
+  if(FX)return FX;
+  const P=id=>lvl(S.perks,id),C=id=>lvl(S.cons,id);
+  const f={bm:Array(NB).fill(1),glob:1,tap:1,tapFrac:0.01+0.01*P('hand'),costMul:1,
+    offCap:(8+2*P('sleep')+C('sag'))*3600,offEff:Math.min(1,0.5+0.1*P('calm')),
+    expSpeed:Math.max(0.25,Math.pow(0.94,P('speed'))*(1-0.06*C('pegasus'))),
+    slots:1+P('crew')+(C('pisces')>=2?1:0),meteorInt:Math.pow(0.92,P('pull')),
+    shardMul:(1+0.1*P('echo'))*(1+0.15*C('cygnus')),meteorMul:1+0.25*C('lyra'),
+    lightMul:1+0.05*C('draco'),stormMul:1+0.2*C('scorp'),auto:P('auto')>0};
+  for(let i=0;i<NB;i++){
+    let m=1;
+    for(let k=0;k<BU.length;k++)if(S.up['b'+i+'_'+k])m*=BU[k][2];
+    if(i<6)m*=1+0.2*C('taurus');else m*=1+0.15*C('andro');
+    f.bm[i]=m;
+  }
+  let g=1;for(let k=0;k<GUP.length;k++)if(S.up['g'+k])g*=1.5;
+  f.glob=g*lightMult(S.lightsTotal)*(1+0.01*achCount())*(1+0.1*C('ursa'))*(1+0.05*P('shine'));
+  let t=1;for(let k=0;k<TUP.length;k++)if(S.up['t'+k])t*=2;
+  f.tap=t*(1+0.25*C('orion'));
+  f.costMul=Math.max(0.3,Math.pow(0.97,P('mind')+C('cass')));
+  FX=f;return f;
+}
+function lightMult(L){return Math.sqrt(1+L);}
+function mile(n){let m=1;for(let k=0;k<MILE.length;k++)if(n>=MILE[k])m*=2;return m;}
+function basePps(){
+  if(PB!==null)return PB;
+  const f=fx();let s=0;
+  for(let i=0;i<NB;i++){const o=S.b[i];if(o>0)s+=o*BUILD[i].p*mile(o)*f.bm[i];}
+  PB=s*f.glob;return PB;
+}
+function buffMult(){const t=_now();let m=1;for(const b of S.buffs)if(b.end>t)m*=b.mult;return m;}
+function pps(){return basePps()*buffMult();}
+function tapValue(){return (1+basePps()*fx().tapFrac)*fx().tap*buffMult();}
+
+/* ----- Стройка ----- */
+function unitCost(i){return BUILD[i].c*Math.pow(GR,S.b[i])*fx().costMul;}
+function bulkCost(i,n){return n===1?unitCost(i):unitCost(i)*(Math.pow(GR,n)-1)/(GR-1);}
+function maxBuy(i){
+  const c=unitCost(i);if(S.dust<c)return 0;
+  const n=Math.floor(Math.log(S.dust*(GR-1)/c+1)/Math.log(GR)+1e-9);
+  return Math.max(0,Math.min(n,5000));
+}
+function bAvail(i){return BUILD[i].ep<=S.epoch;}
+function buy(i,n){
+  if(!bAvail(i))return 0;
+  if(n==='max')n=maxBuy(i);
+  n=Math.floor(n);if(n<1)return 0;
+  const c=bulkCost(i,n);
+  if(!(S.dust>=c*(1-1e-12))){return 0;}
+  S.dust=Math.max(0,S.dust-c);S.b[i]+=n;S.stats.bought+=n;dirty();return n;
+}
+function earn(x){
+  if(!(x>0)||!isFinite(x))return;
+  S.dust+=x;S.run+=x;S.total+=x;S.stats.earned+=x;
+}
+function tapNow(){
+  const v=tapValue();earn(v);S.stats.taps++;return v;
+}
+
+/* ----- Улучшения ----- */
+function upList(){
+  const L=[];
+  for(let i=0;i<NB;i++){
+    if(!bAvail(i))continue;
+    for(let k=0;k<BU.length;k++){
+      const id='b'+i+'_'+k;if(S.up[id])continue;
+      if(S.b[i]>=BU[k][0])L.push({id,e:BUILD[i].e,n:BUILD[i].n+' ×'+BU[k][2],d:'Производство этой постройки ×'+BU[k][2],cost:BUILD[i].c*BU[k][1]});
+    }
+  }
+  for(let k=0;k<GUP.length;k++){const id='g'+k;if(!S.up[id]&&S.run>=GUP[k]*0.15)L.push({id,e:'⚗️',n:'Звёздный катализатор '+(k+1),d:'Всё производство ×1.5',cost:GUP[k]});}
+  for(let k=0;k<TUP.length;k++){const id='t'+k;if(!S.up[id]&&S.run>=TUP[k]*0.15)L.push({id,e:'👆',n:'Сила касания '+(k+1),d:'Тап ×2',cost:TUP[k]});}
+  L.sort((a,b)=>a.cost-b.cost);return L;
+}
+function buyUp(id){
+  const u=upList().find(x=>x.id===id);
+  if(!u||!(S.dust>=u.cost))return false;
+  S.dust-=u.cost;S.up[id]=true;S.stats.bought+=0;dirty();return true;
+}
+
+/* ----- Эпоха (престиж) ----- */
+function prestigeGain(){
+  const g=Math.floor(Math.pow(S.run/PREST_K,PREST_EXP)*fx().lightMul);
+  return g>0&&isFinite(g)?g:0;
+}
+function doPrestige(){
+  const g=prestigeGain();if(g<1)return 0;
+  S.lights+=g;S.lightsTotal+=g;S.epoch++;S.stats.prestiges++;
+  if(g>S.stats.bestGain)S.stats.bestGain=g;
+  S.dust=0;S.run=0;S.b=Array(NB).fill(0);S.up={};S.buffs=[];
+  const h=lvl(S.perks,'help');
+  if(h>0)for(let i=0;i<3;i++)S.b[i]=5*h;
+  dirty();return g;
+}
+function perkCost(p){return Math.round(p.c*Math.pow(p.g,lvl(S.perks,p.id)));}
+function buyPerk(id){
+  const p=PERKS.find(x=>x.id===id);if(!p)return false;
+  const l=lvl(S.perks,id);if(l>=p.max)return false;
+  const c=perkCost(p);if(S.lights<c)return false;
+  S.lights-=c;S.perks[id]=l+1;dirty();return true;
+}
+
+/* ----- Созвездия ----- */
+function conCost(c){return Math.round(c.base*Math.pow(CLVL,lvl(S.cons,c.id)));}
+function buyCon(id){
+  const c=CONS.find(x=>x.id===id);if(!c)return false;
+  const l=lvl(S.cons,id);if(l>=c.max)return false;
+  const k=conCost(c);if(S.shards<k)return false;
+  S.shards-=k;S.cons[id]=l+1;dirty();return true;
+}
+
+/* ----- Экспедиции ----- */
+function missDur(m){return Math.max(10,Math.round(MISS[m].t*fx().expSpeed));}
+function missOpen(m){return MISS[m].ep<=S.epoch;}
+function startExp(m){
+  if(!S.unl.exp||!missOpen(m)||S.exs.length>=fx().slots)return false;
+  S.exs.push({m,start:_now(),end:_now()+missDur(m)*1000});return true;
+}
+function collectExp(idx,rnd){
+  const e=S.exs[idx];if(!e||_now()<e.end)return null;
+  const M=MISS[e.m];
+  const r=(rnd===undefined?Math.random():rnd);
+  const sh=Math.max(1,Math.round(M.sh*fx().shardMul*(0.85+0.3*r)));
+  const dur=(e.end-e.start)/1000;
+  const du=basePps()*dur*0.25;
+  S.shards+=sh;S.stats.totalShards=(S.stats.totalShards||0)+sh;earn(du);S.stats.exps++;
+  S.exs.splice(idx,1);return {sh,du,m:e.m};
+}
+
+/* ----- Метеоры ----- */
+function meteorKind(r){
+  if(r<0.08)return 'storm';
+  if(r<0.22&&S.unl.exp)return 'shard';
+  return 'dust';
+}
+function catchMeteor(kind){
+  S.stats.meteors++;const f=fx();
+  if(kind==='storm'){
+    const d=30*f.stormMul;S.buffs.push({mult:7,end:_now()+d*1000,name:'Буря ×7'});S.stats.comets++;
+    return {t:'🌟 Звёздная буря! ×7 на '+Math.round(d)+' с'};
+  }
+  if(kind==='shard'){
+    const n=Math.max(1,Math.round((2+S.epoch*2)*f.shardMul));S.shards+=n;S.stats.totalShards=(S.stats.totalShards||0)+n;
+    return {t:'💎 +'+n+' осколков'};
+  }
+  const v=Math.max(20*tapValue()/buffMult(),pps()*40/buffMult()*1)*f.meteorMul;
+  earn(v);return {t:'🌠 +'+fmt(v)+' пыли',v};
+}
+
+/* ----- Баффы, оффлайн ----- */
+function applyOffline(sec){
+  if(!(sec>0))return {sec:0,gain:0};
+  const f=fx();sec=Math.min(sec,f.offCap);
+  const g=basePps()*sec*f.offEff;earn(g);
+  return {sec,gain:g};
+}
+function tick(dt){
+  if(!(dt>0))return;
+  earn(pps()*dt);
+  S.stats.play+=dt;
+  const p=pps();if(p>S.stats.maxPps)S.stats.maxPps=p;
+  if(S.buffs.length){const t=_now();S.buffs=S.buffs.filter(b=>b.end>t);}
+}
+let _autoT=0;
+function autoBuy(dt){
+  if(!S.set.auto||!fx().auto)return;
+  _autoT+=dt;if(_autoT<1)return;_autoT=0;
+  for(let r=0;r<5;r++){
+    let bi=-1,bc=Infinity;
+    for(let i=0;i<NB;i++){if(!bAvail(i))continue;const c=unitCost(i);if(c<bc&&c<=S.dust){bc=c;bi=i;}}
+    if(bi<0)break;buy(bi,1);
+  }
+}
+
+/* ----- Разблокировки ----- */
+function checkUnlocks(){
+  if(!S.unl.exp&&S.total>=EXP_AT){S.unl.exp=true;ui.unlock('exp');}
+  if(!S.unl.con&&S.stats.exps>=1){S.unl.con=true;ui.unlock('con');}
+  if(!S.unl.pres&&S.total>=1e7){S.unl.pres=true;ui.unlock('pres');}
+}
+
+/* ----- Достижения ----- */
+const ACH=[];
+function A(id,n,e,d,t){ACH.push({id,n,e,d,t});}
+[1e3,1e6,1e9,1e12,1e15,1e20,1e25,1e30,1e40,1e50].forEach((v,i)=>A('dust'+i,'Накоплено '+fmt(v),'💰','Всего собрано пыли: '+fmt(v),()=>S.total>=v));
+[10,50,100,500,1000,2500].forEach(v=>A('bld'+v,v+' построек','🏗️','Одновременно построено: '+v,()=>S.b.reduce((a,b)=>a+b,0)>=v));
+BUILD.forEach((b,i)=>A('b100_'+i,b.n+': 100','🏆','Построй 100 штук: '+b.n,()=>S.b[i]>=100));
+[100,1000,10000,100000].forEach(v=>A('tap'+v,v+' касаний','👆','Нажми на звезду '+v+' раз',()=>S.stats.taps>=v));
+[1,25,100,500,2000].forEach(v=>A('met'+v,'Метеоры: '+v,'🌠','Поймай метеоров: '+v,()=>S.stats.meteors>=v));
+[1,10,50,200,500].forEach(v=>A('exp'+v,'Экспедиции: '+v,'🧭','Заверши экспедиций: '+v,()=>S.stats.exps>=v));
+[1,2,3,5,10,20,50].forEach(v=>A('ep'+v,'Эпоха '+v,'🔮','Начни новую эпоху (всего '+v+')',()=>S.stats.prestiges>=v));
+[1,5,15,30,60].forEach(v=>A('con'+v,'Созвездия: ур. '+v,'🌌','Сумма уровней созвездий: '+v,()=>Object.values(S.cons).reduce((a,b)=>a+b,0)>=v));
+[3,7,14,30].forEach(v=>A('str'+v,'Серия '+v+' дн.','📅','Заходи '+v+' дн. подряд',()=>S.daily.streak>=v));
+[1,5,24,72,168].forEach(v=>A('pl'+v,'В игре '+v+' ч','⏳','Время активной игры: '+v+' ч',()=>S.stats.play>=v*3600));
+[5,20,50].forEach(v=>A('pk'+v,'Дары: '+v,'🎁','Уровней даров эпохи: '+v,()=>Object.values(S.perks).reduce((a,b)=>a+b,0)>=v));
+function checkAch(){
+  let n=0;
+  for(const a of ACH){if(!S.ach[a.id]&&a.t()){S.ach[a.id]=true;n++;ui.toast('🏅 '+a.n+' (+1% к производству)');}}
+  if(n){dirty();ui.sfx('ach');}
+}
+
+/* ----- Ежедневное ----- */
+function dkey(t){const d=new Date(t===undefined?_now():t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function dayDiff(a,b){return Math.round((Date.parse(b+'T12:00:00')-Date.parse(a+'T12:00:00'))/864e5);}
+function dailyState(){
+  const k=dkey();
+  if(S.daily.claimed===k)return {can:false,day:((S.daily.streak-1)%7+7)%7};
+  let st=S.daily.streak;
+  if(S.daily.last&&dayDiff(S.daily.last,k)>1)st=0;
+  return {can:true,day:st%7,next:st+1};
+}
+function claimDaily(){
+  const d=dailyState();if(!d.can)return null;
+  const k=dkey();S.daily.streak=d.next;S.daily.last=k;S.daily.claimed=k;
+  const r=DAILY[d.day];let txt;
+  const mins=m=>Math.max(200,basePps()*m*60);
+  if(r.t==='dust'){const g=mins(r.v);earn(g);txt='+'+fmt(g)+' пыли';}
+  else if(r.t==='shard'){if(S.unl.exp){S.shards+=r.v*(1+S.epoch);txt='+'+r.v*(1+S.epoch)+' осколков';}else{const g=mins(40);earn(g);txt='+'+fmt(g)+' пыли';}}
+  else if(r.t==='buff'){S.buffs.push({mult:r.v,end:_now()+20*60000,name:'Дар ×'+r.v});txt='×'+r.v+' на 20 минут';}
+  else{S.lights+=r.v;S.lightsTotal+=r.v;const g=mins(180);earn(g);txt='+'+r.v+' Озарения, +'+fmt(g)+' пыли';dirty();}
+  return txt;
+}
+const QPOOL=[
+ {k:'taps',stat:'taps',tg:()=>150+Math.floor(Math.random()*100),txt:n=>'Нажми на звезду '+n+' раз'},
+ {k:'meteors',stat:'meteors',tg:()=>4+Math.floor(Math.random()*3),txt:n=>'Поймай метеоров: '+n},
+ {k:'bought',stat:'bought',tg:()=>20+Math.floor(Math.random()*20),txt:n=>'Построй зданий: '+n},
+ {k:'exps',stat:'exps',tg:()=>2,txt:n=>'Заверши экспедиций: '+n,need:'exp'},
+ {k:'earned',stat:'earned',tg:()=>Math.max(1000,basePps()*1800),txt:n=>'Добудь '+fmt(n)+' пыли'}];
+function ensureQuests(){
+  const k=dkey();if(S.quests.date===k)return;
+  const pool=QPOOL.filter(q=>!q.need||S.unl[q.need]);
+  const pick=[];
+  while(pick.length<3&&pool.length){pick.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);}
+  S.quests={date:k,list:pick.map(q=>{const t=q.tg();return {k:q.k,target:t,base:S.stats[q.stat]||0,done:false};})};
+}
+function questProg(q){const d=QPOOL.find(x=>x.k===q.k);return Math.min(q.target,(S.stats[d.stat]||0)-q.base);}
+function claimQuest(i){
+  const q=S.quests.list[i];if(!q||q.done||questProg(q)<q.target)return null;
+  q.done=true;
+  const g=Math.max(100,basePps()*900);earn(g);let txt='+'+fmt(g)+' пыли';
+  if(S.unl.exp){const s=8*(1+S.epoch);S.shards+=s;txt+=', +'+s+' осколков';}
+  return txt;
+}
+
+/* ----- Сохранение ----- */
+function merge(base,src){
+  if(!src||typeof src!=='object')return base;
+  for(const k in base){
+    const b=base[k],s=src[k];
+    if(s===undefined||s===null)continue;
+    if(Array.isArray(b)){if(Array.isArray(s))for(let i=0;i<b.length;i++)if(typeof s[i]==='number'&&isFinite(s[i])&&s[i]>=0)b[i]=s[i];}
+    else if(typeof b==='object'){base[k]=merge(b,s);}
+    else if(typeof b==='number'){if(typeof s==='number'&&isFinite(s))base[k]=s;}
+    else if(typeof b==='string'){if(typeof s==='string')base[k]=s;}
+    else if(typeof b==='boolean'){if(typeof s==='boolean')base[k]=s;}
+  }
+  // свободные словари
+  for(const k of ['up','perks','cons','ach','seen']){
+    if(src[k]&&typeof src[k]==='object'){base[k]={};for(const x in src[k]){const v=src[k][x];if(typeof v==='boolean'||(typeof v==='number'&&isFinite(v)))base[k][x]=v;}}
+  }
+  if(Array.isArray(src.exs))base.exs=src.exs.filter(e=>e&&Number.isFinite(e.m)&&e.m>=0&&e.m<MISS.length&&Number.isFinite(e.start)&&Number.isFinite(e.end)).map(e=>({m:e.m,start:e.start,end:e.end}));
+  if(Array.isArray(src.buffs))base.buffs=src.buffs.filter(e=>e&&Number.isFinite(e.mult)&&Number.isFinite(e.end)).map(e=>({mult:e.mult,end:e.end,name:String(e.name||'')}));
+  if(src.quests&&Array.isArray(src.quests.list))base.quests.list=src.quests.list.filter(q=>q&&typeof q.k==='string'&&QPOOL.some(x=>x.k===q.k)&&Number.isFinite(q.target)&&Number.isFinite(q.base)).map(q=>({k:q.k,target:q.target,base:q.base,done:!!q.done}));
+  return base;
+}
+function sanitize(){
+  for(const k of ['dust','run','total','shards','lights','lightsTotal'])if(!isFinite(S[k])||S[k]<0)S[k]=0;
+  for(let i=0;i<NB;i++)if(!isFinite(S.b[i])||S.b[i]<0)S.b[i]=0;
+}
+function serialize(){sanitize();S.last=_now();return JSON.stringify(S);}
+function saveGame(){try{localStorage.setItem(SAVE_KEY,serialize());return true;}catch(e){return false;}}
+function loadObj(o){
+  const ns=merge(newState(),o);
+  if(!(ns.v>=1))throw new Error('bad');
+  if(ns.last>_now()+864e5)ns.last=_now();
+  S=ns;dirty();
+}
+function loadGame(){
+  try{const raw=localStorage.getItem(SAVE_KEY);if(!raw)return false;loadObj(JSON.parse(raw));return true;}catch(e){return false;}
+}
+function exportSave(){return 'ZV1:'+btoa(unescape(encodeURIComponent(serialize())));}
+function importSave(txt){
+  txt=String(txt||'').replace(/\s+/g,'');
+  if(txt.indexOf('ZV1:')!==0)return false;
+  try{const o=JSON.parse(decodeURIComponent(escape(atob(txt.slice(4)))));if(!o||typeof o!=='object'||!(o.v>=1))return false;loadObj(o);S.last=_now();return true;}catch(e){return false;}
+}
+/* ===UI=== */
+/* ===================== ИНТЕРФЕЙС ===================== */
+const $=id=>document.getElementById(id);
+const tg=(window.Telegram&&window.Telegram.WebApp)?window.Telegram.WebApp:null;
+let tab='b',sub='rew',lastSig='',curTip='';
+const TABS=[['b','🏗️','Постройки'],['u','⬆️','Улучшения'],['x','🧭','Экспедиции'],['c','🌌','Созвездия'],['p','🔮','Эпоха'],['m','☰','Ещё']];
+
+/* --- звук --- */
+let AC=null;
+function beep(f,d,type,v){
+  if(!S.set.sound)return;
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==='suspended')AC.resume();
+    const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;
+    g.gain.value=v||0.05;g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+d);
+    o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+d);
+  }catch(e){}
+}
+ui.sfx=k=>{
+  if(k==='tap')beep(520+Math.random()*180,0.07,'triangle',0.035);
+  else if(k==='buy')beep(660,0.1,'square',0.03);
+  else if(k==='met'){beep(880,0.12,'sine',0.06);setTimeout(()=>beep(1175,0.2,'sine',0.05),90);}
+  else if(k==='ach'||k==='big'){beep(523,0.15,'sine',0.06);setTimeout(()=>beep(659,0.15,'sine',0.06),120);setTimeout(()=>beep(784,0.3,'sine',0.06),240);}
+};
+ui.haptic=k=>{
+  if(!S.set.haptic)return;
+  try{
+    if(tg&&tg.HapticFeedback){if(k==='ok')tg.HapticFeedback.notificationOccurred('success');else tg.HapticFeedback.impactOccurred(k==='hard'?'medium':'light');}
+    else if(navigator.vibrate)navigator.vibrate(k==='ok'?[20,40,20]:k==='hard'?25:8);
+  }catch(e){}
+};
+ui.toast=t=>{
+  const d=document.createElement('div');d.className='toast';d.textContent=t;$('toasts').appendChild(d);
+  while($('toasts').children.length>3)$('toasts').removeChild($('toasts').firstChild);
+  setTimeout(()=>{if(d.parentNode)d.parentNode.removeChild(d);},3100);
+};
+function modal(html,btns){
+  $('mbox').innerHTML=html+'<div id="mbtn"></div>';
+  const c=$('mbtn');
+  (btns||[{t:'Понятно'}]).forEach(b=>{
+    const e=document.createElement('button');e.className='btn '+(b.cls||'gold');e.textContent=b.t;
+    e.onclick=()=>{$('modal').classList.remove('on');if(b.f)b.f();};c.appendChild(e);
+  });
+  $('modal').classList.add('on');
+}
+ui.modal=modal;
+ui.unlock=k=>{
+  if(S.seen[k])return;S.seen[k]=true;ui.sfx('big');ui.haptic('ok');renderTabs();
+  if(k==='exp')modal('<div class="big">🧭</div><h2>Экспедиции открыты!</h2><p>Отправляй исследователей за <b>осколками ◆</b>. Они уходят надолго и работают, даже когда игра закрыта: вернулся — забрал награду.</p><p>Осколки нужны для <b>созвездий</b> — вечных усилений, которые не сбрасываются.</p>');
+  if(k==='con')modal('<div class="big">🌌</div><h2>Созвездия!</h2><p>Тратя осколки, открывай созвездия и улучшай их до 5 уровня. Бонусы остаются навсегда — даже после новой эпохи.</p>');
+  if(k==='pres')modal('<div class="big">🔮</div><h2>Скоро новая эпоха</h2><p>Во вкладке «Эпоха» ты можешь начать всё с нуля и получить <b>Озарение</b> — оно даёт постоянный бонус и покупку вечных даров. Чем больше пыли в забеге — тем больше Озарения.</p>');
+};
+
+/* --- Telegram --- */
+function initTg(){
+  if(!tg)return;
+  try{
+    tg.ready();tg.expand();
+    if(tg.setHeaderColor)tg.setHeaderColor('#0b0d1f');
+    if(tg.setBackgroundColor)tg.setBackgroundColor('#0b0d1f');
+    if(tg.disableVerticalSwipes)tg.disableVerticalSwipes();
+  }catch(e){}
+}
+
+/* --- вкладки --- */
+function tabLocked(t){return (t==='x'&&!S.unl.exp)||(t==='c'&&!S.unl.con)||(t==='p'&&!S.unl.pres);}
+function renderTabs(){
+  $('tabs').innerHTML=TABS.map(t=>{
+    const dot=(t[0]==='m'&&(dailyState().can||questReady()))||(t[0]==='x'&&S.unl.exp&&S.exs.some(e=>_now()>=e.end))||(t[0]==='p'&&S.unl.pres&&prestigeGain()>=Math.max(5,S.lightsTotal));
+    return '<button data-tab="'+t[0]+'" class="'+(tab===t[0]?'on ':'')+(tabLocked(t[0])?'lock ':'')+(dot?'dot':'')+'"><span>'+(tabLocked(t[0])?'🔒':t[1])+'</span>'+t[2]+'</button>';
+  }).join('');
+}
+function questReady(){return S.quests.list.some(q=>!q.done&&questProg(q)>=q.target);}
+$('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  const t=b.dataset.tab;
+  if(tabLocked(t)){ui.toast(t==='x'?'Накопи '+fmt(EXP_AT)+' пыли за всё время':t==='c'?'Заверши первую экспедицию':'Накопи 10M пыли за всё время');return;}
+  tab=t;renderTabs();renderPanel(true);
+});
+
+/* --- панель --- */
+function rowB(i){
+  const b=BUILD[i],o=S.b[i];
+  if(!bAvail(i))return '<div class="row dim"><div class="ic">🔒</div><div class="mid"><b>'+b.n+'</b><small>Откроется после '+b.ep+'-й новой эпохи</small></div></div>';
+  return '<div class="row" data-r="'+i+'"><div class="ic">'+b.e+'</div><div class="mid"><b>'+b.n+'</b><span class="own">×'+o+'</span><small class="info"></small></div><button class="buy" data-act="buy" data-i="'+i+'"><span class="cnt"></span><small class="cost"></small></button></div>';
+}
+function visB(i){
+  if(i===0)return true;
+  if(S.b[i]>0)return true;
+  let top=-1;for(let k=0;k<NB;k++)if(S.b[k]>0)top=k;
+  return i<=top+1&&(bAvail(i)||S.b[i-1]>0);
+}
+function renderPanel(reset){
+  const p=$('panel'),st=p.scrollTop;
+  let h='';
+  if(tab==='b'){
+    h+='<div id="tipbox"></div><div class="bar">'+[1,10,100,'max'].map(n=>'<button data-act="bm" data-n="'+n+'" class="'+(S.set.buy===n?'on':'')+'">'+(n==='max'?'Макс':'×'+n)+'</button>').join('')+'</div>';
+    for(let i=0;i<NB;i++)if(visB(i))h+=rowB(i);
+  }else if(tab==='u'){
+    const L=upList();lastSig=L.map(x=>x.id).join(',');
+    h+='<div id="tipbox"></div>';
+    if(!L.length)h+='<p class="t">Улучшения появятся, когда накопишь достаточно построек и пыли. Продолжай!</p>';
+    L.forEach(u=>{h+='<div class="row" data-u="'+u.id+'" data-cost="'+u.cost+'"><div class="ic">'+u.e+'</div><div class="mid"><b>'+u.n+'</b><small>'+u.d+'</small></div><button class="buy" data-act="up" data-id="'+u.id+'"><span>'+fmt(u.cost)+'</span></button></div>';});
+  }else if(tab==='x'){
+    h+='<p class="t">Слотов: '+S.exs.length+' / '+fx().slots+'. Экспедиции идут даже при закрытой игре. Награда — осколки ◆ и немного пыли.</p>';
+    S.exs.forEach((e,i)=>{const M=MISS[e.m];h+='<div class="row" data-x="'+i+'"><div class="ic">'+M.e+'</div><div class="mid"><b>'+M.n+'</b><small class="xt"></small><div class="prog"><b></b></div></div><button class="buy no" data-act="col" data-i="'+i+'"><span>Забрать</span></button></div>';});
+    h+='<h3>Отправить</h3>';
+    MISS.forEach((M,m)=>{
+      if(!missOpen(m)){h+='<div class="row dim"><div class="ic">🔒</div><div class="mid"><b>'+M.n+'</b><small>Откроется после '+M.ep+'-й новой эпохи</small></div></div>';return;}
+      const sh=Math.round(M.sh*fx().shardMul);
+      h+='<div class="row"><div class="ic">'+M.e+'</div><div class="mid"><b>'+M.n+'</b><small>'+fmtT(missDur(m))+' · ≈'+sh+' ◆</small></div><button class="buy '+(S.exs.length>=fx().slots?'no':'')+'" data-act="go" data-m="'+m+'"><span>Старт</span></button></div>';
+    });
+  }else if(tab==='c'){
+    h+='<p class="t">Осколки: <b style="color:var(--gold)" id="shc">'+fmt(S.shards)+'</b> ◆. Бонусы созвездий вечны.</p>';
+    CONS.forEach(c=>{
+      const l=lvl(S.cons,c.id),mx=l>=c.max,k=conCost(c);
+      h+='<div class="row" data-c="'+c.id+'" data-cost="'+(mx?-1:k)+'"><div class="ic">'+c.e+'</div><div class="mid"><b>'+c.n+'</b><small>'+c.d+' за уровень</small><div class="lv">'+Array.from({length:c.max},(_,j)=>'<i class="'+(j<l?'f':'')+'"></i>').join('')+'</div></div>'+(mx?'<button class="buy no"><span>МАКС</span></button>':'<button class="buy" data-act="con" data-id="'+c.id+'"><span>'+fmt(k)+' ◆</span></button>')+'</div>';
+    });
+  }else if(tab==='p'){
+    const g=prestigeGain();
+    h+='<div class="row" style="flex-direction:column;align-items:stretch;text-align:center"><div style="font-size:15px">Озарение: <b style="color:var(--gold)" id="lc">'+fmt(S.lights)+'</b> 🔆 (всего '+fmt(S.lightsTotal)+', бонус ×'+fmt(lightMult(S.lightsTotal))+')</div><p class="t" id="pg"></p><button class="btn gold" id="pbtn" data-act="prest"></button></div>';
+    h+='<h3>Дары эпохи</h3>';
+    PERKS.forEach(pk=>{
+      const l=lvl(S.perks,pk.id),mx=l>=pk.max,c=perkCost(pk);
+      h+='<div class="row" data-k="'+pk.id+'" data-cost="'+(mx?-1:c)+'"><div class="ic">'+pk.e+'</div><div class="mid"><b>'+pk.n+'</b><span class="own">'+l+'/'+pk.max+'</span><small>'+pk.d+'</small></div>'+(mx?'<button class="buy no"><span>МАКС</span></button>':'<button class="buy" data-act="perk" data-id="'+pk.id+'"><span>'+fmt(c)+' 🔆</span></button>')+'</div>';
+    });
+  }else{
+    h+='<div class="bar">'+[['rew','Награды'],['ach','Успехи'],['stat','Статистика'],['set','Настройки']].map(s=>'<button data-act="sub" data-s="'+s[0]+'" class="'+(sub===s[0]?'on':'')+'">'+s[1]+'</button>').join('')+'</div>';
+    h+=renderSub();
+  }
+  p.innerHTML=h;
+  if(!reset)p.scrollTop=st;else p.scrollTop=0;
+  live();
+}
+function renderSub(){
+  let h='';
+  if(sub==='rew'){
+    const d=dailyState();
+    h+='<h3>Ежедневная награда</h3><div class="row"><div class="ic">📅</div><div class="mid"><b>Серия: '+S.daily.streak+' дн.</b><small>Сегодня: '+DAILY[d.day].txt+'</small><div class="lv">'+DAILY.map((_,j)=>'<i class="'+(j<(d.can?d.day:d.day+1)?'f':'')+'"></i>').join('')+'</div></div><button class="buy '+(d.can?'':'no')+'" data-act="daily"><span>'+(d.can?'Забрать':'Завтра')+'</span></button></div>';
+    ensureQuests();
+    h+='<h3>Задания дня</h3>';
+    S.quests.list.forEach((q,i)=>{
+      const def=QPOOL.find(x=>x.k===q.k),pr=questProg(q),ok=pr>=q.target;
+      h+='<div class="row"><div class="ic">'+(q.done?'✅':'🎯')+'</div><div class="mid"><b>'+def.txt(q.target)+'</b><small>'+fmt(pr)+' / '+fmt(q.target)+' · награда: пыль'+(S.unl.exp?' + осколки':'')+'</small><div class="prog"><b style="width:'+(pr/q.target*100)+'%"></b></div></div><button class="buy '+(ok&&!q.done?'':'no')+'" data-act="quest" data-i="'+i+'"><span>'+(q.done?'Готово':'Забрать')+'</span></button></div>';
+    });
+    h+='<p class="t">Задания обновляются в полночь по твоему времени.</p>';
+  }else if(sub==='ach'){
+    h+='<p class="t">Открыто '+achCount()+' из '+ACH.length+'. Каждое достижение: +1% ко всему производству.</p>';
+    ACH.forEach(a=>{h+='<div class="row ach '+(S.ach[a.id]?'done':'')+'"><div class="ic">'+a.e+'</div><div class="mid"><b>'+a.n+'</b><small>'+a.d+'</small></div></div>';});
+  }else if(sub==='stat'){
+    const s=S.stats,rows=[['Пыли за всё время',fmt(S.total)],['Пыли в этой эпохе',fmt(S.run)],['Производство',fmt(pps())+'/с'],['Рекорд производства',fmt(s.maxPps)+'/с'],['Касаний',fmt(s.taps)],['Метеоров поймано',fmt(s.meteors)],['Построено',fmt(s.bought)],['Экспедиций',fmt(s.exps)],['Осколков всего',fmt(s.totalShards||0)],['Новых эпох',fmt(s.prestiges)],['Лучшее Озарение за раз',fmt(s.bestGain)],['Время в игре',fmtT(s.play)],['Дней с первого запуска',Math.floor((_now()-S.created)/864e5)+1]];
+    h+=rows.map(r=>'<div class="stat"><span>'+r[0]+'</span><span>'+r[1]+'</span></div>').join('');
+  }else{
+    const o=(k,t)=>'<div class="row"><div class="mid"><b>'+t+'</b></div><button class="buy '+(S.set[k]?'':'no')+'" data-act="set" data-k="'+k+'"><span>'+(S.set[k]?'Вкл':'Выкл')+'</span></button></div>';
+    h+=o('sound','🔊 Звук')+o('haptic','📳 Вибро-отклик');
+    if(fx().auto)h+=o('auto','🤖 Автоинженер');
+    h+='<h3>Сохранение</h3><p class="t">Игра сохраняется сама. На iPhone данные сайта Safari могут стереться, если не заходить долго, — делай экспорт и добавь игру на экран «Домой».</p><div class="grid2"><button class="btn" data-act="exp">📤 Экспорт</button><button class="btn" data-act="imp">📥 Импорт</button></div><textarea id="sv" placeholder="Здесь код сохранения (для импорта вставь сюда)"></textarea>';
+    h+='<h3>Прочее</h3><div class="grid2"><button class="btn" data-act="help">❓ Как играть</button><button class="btn red" data-act="reset">🗑️ Сброс</button></div>';
+    if(tg)h+='<div style="margin-top:8px"><button class="btn" style="width:100%" data-act="close">Закрыть игру</button></div>';
+    h+='<p class="t" style="text-align:center">Звездочёт v1.0</p>';
+  }
+  return h;
+}
+
+/* --- живое обновление --- */
+function tipText(){
+  if(S.tut<TUT.length)return TUT[S.tut].t;
+  return '';
+}
+const TUT=[
+ {t:'👆 Нажимай на светящуюся звезду — так собирается звёздная пыль.',d:()=>S.stats.taps>=15},
+ {t:'🏗️ Купи первый Телескоп во вкладке «Постройки» (15 пыли) — он копит пыль сам!',d:()=>S.b[0]>=1},
+ {t:'Покупай ещё телескопы. Цена растёт, но и доход тоже. Цель: 5 штук.',d:()=>S.b[0]>=5},
+ {t:'🌠 Лови метеоры, летящие по небу — это быстрый бонус! (первый скоро появится)',d:()=>S.stats.meteors>=1},
+ {t:'⬆️ Загляни во вкладку «Улучшения»: за пыль можно умножить доход.',d:()=>Object.keys(S.up).length>=1},
+ {t:'📡 Теперь купи Радиоантенну — вторую постройку в списке.',d:()=>S.b[1]>=1}];
+function goal(){
+  const f=(a,b)=>[a,Math.min(1,b)];
+  if(S.tut<TUT.length)return null;
+  if(!S.unl.exp)return ['Цель: накопить '+fmt(EXP_AT)+' пыли — откроются экспедиции',S.total/EXP_AT];
+  if(!S.unl.con)return ['Цель: заверши первую экспедицию 🧭',S.exs.length?0.5:0.1];
+  const g=prestigeGain();
+  if(S.stats.prestiges===0){
+    if(g<1)return ['Цель: '+fmt(PREST_K)+' пыли за эпоху — откроется Озарение',S.run/PREST_K];
+    return ['🔮 Можно начать новую эпоху: +'+fmt(g)+' Озарения (лучше подождать побольше)',1];
+  }
+  if(S.lights>=Math.min(...PERKS.filter(p=>lvl(S.perks,p.id)<p.max).map(perkCost).concat([Infinity])))return ['🎁 Есть Озарение — потрать на дары эпохи',1];
+  if(g>=Math.max(5,S.lightsTotal*0.5))return ['🔮 Новая эпоха даст +'+fmt(g)+' Озарения',1];
+  return ['Цель: Озарение за эпоху: '+fmt(g)+' / '+fmt(Math.max(5,Math.ceil(S.lightsTotal*0.5))),g/Math.max(5,S.lightsTotal*0.5)];
+}
+let _goalTxt='';
+function live(){
+  $('dust').textContent=fmt(S.dust);
+  $('pps').textContent='+'+fmt(pps())+' пыли/с'+(S.epoch?' · эпоха '+(S.epoch+1):'');
+  let ch='';
+  if(S.lights>0||S.lightsTotal>0)ch+='<span class="chip">🔆 '+fmt(S.lights)+'</span>';
+  if(S.unl.exp)ch+='<span class="chip">◆ '+fmt(S.shards)+'</span>';
+  const t=_now();S.buffs.forEach(b=>{if(b.end>t)ch+='<span class="chip buff">'+(b.name||'×'+b.mult)+' · '+Math.ceil((b.end-t)/1000)+'с</span>';});
+  if($('chips').dataset.h!==ch){$('chips').innerHTML=ch;$('chips').dataset.h=ch;}
+  const g=goal(),gt=g?g[0]:'';
+  if(g){const w=Math.round(g[1]*100);const hh=gt+'<i><b style="width:'+w+'%"></b></i>';if(_goalTxt!==hh){_goalTxt=hh;$('goal').innerHTML=hh;}}
+  else if(_goalTxt!==''){_goalTxt='';$('goal').innerHTML='';}
+  const tb=$('tipbox');if(tb){const tx=tipText();tb.innerHTML=tx?'<div class="tip">'+tx+'</div>':'';}
+  if(tab==='b'){
+    for(let i=0;i<NB;i++){
+      const r=document.querySelector('[data-r="'+i+'"]');if(!r)continue;
+      const o=S.b[i];
+      let n=S.set.buy==='max'?Math.max(1,maxBuy(i)):S.set.buy;
+      const c=bulkCost(i,n);
+      r.querySelector('.own').textContent='×'+o;
+      const per=BUILD[i].p*mile(o)*fx().bm[i]*fx().glob;
+      const nm=MILE.find(x=>x>o);
+      r.querySelector('.info').textContent='+'+fmt(per)+'/с каждый'+(o>0?' · всего '+fmt(per*o):'')+(nm?' · ×2 на '+nm:'');
+      r.querySelector('.cnt').textContent='Купить ×'+n;
+      r.querySelector('.cost').textContent=fmt(c);
+      r.querySelector('button').classList.toggle('no',!(S.dust>=c));
+    }
+    const need=visB(NB-1)?-1:Math.max(0,...Array.from(document.querySelectorAll('[data-r]')).map(x=>+x.dataset.r))+1;
+    if(need>=0&&need<NB&&!document.querySelector('[data-r="'+need+'"]')&&visB(need))renderPanel();
+  }else if(tab==='u'){
+    const L=upList(),sig=L.map(x=>x.id).join(',');
+    if(sig!==lastSig){renderPanel();return;}
+    document.querySelectorAll('[data-u]').forEach(r=>r.querySelector('button').classList.toggle('no',!(S.dust>=+r.dataset.cost)));
+  }else if(tab==='x'){
+    document.querySelectorAll('[data-x]').forEach(r=>{
+      const e=S.exs[+r.dataset.x];if(!e)return;
+      const left=(e.end-t)/1000,tot=(e.end-e.start)/1000;
+      r.querySelector('.xt').textContent=left>0?'Осталось '+fmtT(left):'Готово! Забирай награду';
+      r.querySelector('.prog b').style.width=Math.min(100,(1-left/tot)*100)+'%';
+      r.querySelector('button').classList.toggle('no',left>0);
+    });
+  }else if(tab==='c'){
+    const e=$('shc');if(e)e.textContent=fmt(S.shards);
+    document.querySelectorAll('[data-c]').forEach(r=>{const c=+r.dataset.cost;const b=r.querySelector('button');if(c>=0)b.classList.toggle('no',!(S.shards>=c));});
+  }else if(tab==='p'){
+    const g=prestigeGain(),e=$('pg');
+    if(e){
+      e.innerHTML='Эта эпоха: '+fmt(S.run)+' пыли. '+(g>=1?'Новая эпоха даст <b style="color:var(--gold)">+'+fmt(g)+' 🔆</b> (бонус станет ×'+fmt(lightMult(S.lightsTotal+g))+').':'Нужно минимум '+fmt(PREST_K)+' пыли за эпоху.')+'<br>Сбросятся: пыль, постройки, улучшения. Останутся: созвездия, осколки, дары, достижения.';
+      const b=$('pbtn');b.textContent=g>=1?'🔮 Начать новую эпоху (+'+fmt(g)+')':'Недостаточно пыли';b.classList.toggle('no',g<1);
+    }
+    document.querySelectorAll('[data-k]').forEach(r=>{const c=+r.dataset.cost;if(c>=0)r.querySelector('button').classList.toggle('no',!(S.lights>=c));});
+  }
+}
+
+/* --- действия --- */
+$('panel').addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const a=b.dataset.act;
+  if(a==='buy'){const i=+b.dataset.i;const n=buy(i,S.set.buy);if(n){ui.sfx('buy');ui.haptic('light');}else ui.haptic('light');live();renderTabs();}
+  else if(a==='bm'){S.set.buy=b.dataset.n==='max'?'max':+b.dataset.n;renderPanel();}
+  else if(a==='up'){if(buyUp(b.dataset.id)){ui.sfx('buy');ui.haptic('light');renderPanel();}}
+  else if(a==='go'){if(startExp(+b.dataset.m)){ui.sfx('buy');renderPanel();renderTabs();}else ui.toast('Нет свободных слотов');}
+  else if(a==='col'){const r=collectExp(+b.dataset.i);if(r){ui.sfx('met');ui.haptic('ok');ui.toast('🧭 +'+r.sh+' осколков, +'+fmt(r.du)+' пыли');checkUnlocks();renderPanel();renderTabs();}else ui.toast('Ещё в пути');}
+  else if(a==='con'){if(buyCon(b.dataset.id)){ui.sfx('ach');ui.haptic('ok');renderPanel();}}
+  else if(a==='perk'){if(buyPerk(b.dataset.id)){ui.sfx('ach');ui.haptic('ok');renderPanel();}}
+  else if(a==='prest'){
+    const g=prestigeGain();if(g<1)return;
+    modal('<div class="big">🔮</div><h2>Новая эпоха?</h2><p>Ты получишь <b>+'+fmt(g)+' Озарения</b> (бонус ко всему ×'+fmt(lightMult(S.lightsTotal+g))+').</p><p>Пыль, постройки и улучшения обнулятся. Созвездия, осколки, дары, достижения и экспедиции в пути сохранятся.</p>',[{t:'Отмена',cls:'no'},{t:'Начать!',f:()=>{const g2=doPrestige();if(g2){ui.sfx('big');ui.haptic('ok');setHue();saveGame();checkAch();renderTabs();renderPanel(true);ui.toast('🔮 Эпоха '+(S.epoch+1)+'! +'+fmt(g2)+' Озарения');}}}]);
+  }
+  else if(a==='sub'){sub=b.dataset.s;renderPanel(true);}
+  else if(a==='daily'){const t=claimDaily();if(t){ui.sfx('big');ui.haptic('ok');ui.toast('📅 '+t);renderPanel();renderTabs();}}
+  else if(a==='quest'){const t=claimQuest(+b.dataset.i);if(t){ui.sfx('ach');ui.haptic('ok');ui.toast('🎯 '+t);renderPanel();renderTabs();}}
+  else if(a==='set'){const k=b.dataset.k;S.set[k]=!S.set[k];if(k==='sound'&&S.set.sound)beep(660,0.15);renderPanel();}
+  else if(a==='exp'){const s=exportSave(),t=$('sv');t.value=s;t.focus();t.select();try{if(navigator.clipboard)navigator.clipboard.writeText(s).then(()=>ui.toast('Скопировано'),()=>ui.toast('Скопируй текст вручную'));else ui.toast('Скопируй текст вручную');}catch(x){ui.toast('Скопируй текст вручную');}}
+  else if(a==='imp'){const v=$('sv').value;if(!v.trim()){ui.toast('Вставь код в поле');return;}
+    modal('<h2>Загрузить сохранение?</h2><p>Текущий прогресс будет заменён.</p>',[{t:'Отмена',cls:'no'},{t:'Загрузить',f:()=>{if(importSave(v)){saveGame();setHue();ui.toast('Загружено');renderTabs();renderPanel(true);}else ui.toast('Неверный код сохранения');}}]);}
+  else if(a==='help')showHelp();
+  else if(a==='reset'){modal('<h2>Стереть всё?</h2><p>Весь прогресс будет удалён без возможности восстановления (если нет экспорта).</p>',[{t:'Отмена',cls:'no'},{t:'Далее',cls:'red',f:()=>modal('<h2>Точно стереть?</h2><p>Это последнее предупреждение.</p>',[{t:'Нет',cls:'no'},{t:'Да, стереть',cls:'red',f:()=>{try{localStorage.removeItem(SAVE_KEY);}catch(x){}S=newState();dirty();tab='b';setHue();checkUnlocks();renderTabs();renderPanel(true);}}])}]);}
+  else if(a==='close'){try{tg.close();}catch(x){}}
+});
+function showHelp(){
+  modal('<div class="big">🔭</div><h2>Как играть</h2><p>⭐ Нажимай на звезду — собирай <b>пыль</b>.</p><p>🏗️ Покупай <b>постройки</b> — они копят пыль сами, даже когда игра закрыта (до лимита времени).</p><p>⬆️ <b>Улучшения</b> умножают доход.</p><p>🌠 Лови <b>метеоры</b>: пыль, осколки и бури.</p><p>🧭 <b>Экспедиции</b> приносят осколки для вечных <b>созвездий</b>.</p><p>🔮 <b>Новая эпоха</b> сбрасывает пыль, но даёт Озарение — постоянный бонус и дары. Каждая эпоха быстрее предыдущей.</p><p>📅 Заходи каждый день за наградой и заданиями.</p>');
+}
+
+/* --- звезда и метеоры --- */
+function floatText(txt,x,y){
+  const d=document.createElement('div');d.className='fl';d.textContent=txt;
+  d.style.left=Math.max(10,x-20)+'px';d.style.top=(y-10)+'px';$('sky').appendChild(d);
+  setTimeout(()=>{if(d.parentNode)d.parentNode.removeChild(d);},1000);
+}
+$('orb').addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  const v=tapNow();ui.sfx('tap');ui.haptic('light');
+  const r=$('sky').getBoundingClientRect();
+  floatText('+'+fmt(v),e.clientX-r.left+(Math.random()*30-15),e.clientY-r.top-20);
+  $('orb').classList.add('p');setTimeout(()=>$('orb').classList.remove('p'),70);
+  $('dust').textContent=fmt(S.dust);
+});
+let nextMet=_now()+12000;
+function spawnMeteor(){
+  const sky=$('sky'),w=sky.clientWidth,h=sky.clientHeight;
+  const kind=meteorKind(Math.random());
+  const d=document.createElement('div');d.className='meteor';
+  d.textContent=kind==='storm'?'🌟':kind==='shard'?'💎':'🌠';
+  const y=10+Math.random()*(h-70);d.style.left=(w+10)+'px';d.style.top=y+'px';
+  d.style.setProperty('--dx',-(w+120)+'px');d.style.setProperty('--dy',(Math.random()*80-30)+'px');
+  d.style.setProperty('--d',(6+Math.random()*3)+'s');
+  d.addEventListener('pointerdown',ev=>{
+    ev.preventDefault();ev.stopPropagation();
+    const r=catchMeteor(kind);ui.sfx('met');ui.haptic('ok');ui.toast(r.t);
+    const b=d.getBoundingClientRect(),sr=sky.getBoundingClientRect();
+    floatText('✨',b.left-sr.left,b.top-sr.top);
+    if(d.parentNode)d.parentNode.removeChild(d);checkAch();live();
+  });
+  d.addEventListener('animationend',()=>{if(d.parentNode)d.parentNode.removeChild(d);});
+  sky.appendChild(d);
+}
+function meteorTimer(){
+  if(document.hidden)return;
+  if(_now()<nextMet)return;
+  if(document.querySelectorAll('.meteor').length>=2){nextMet=_now()+5000;return;}
+  spawnMeteor();
+  const first=S.stats.meteors===0&&S.tut<=3;
+  nextMet=_now()+(first?45000:(25+Math.random()*35)*1000*fx().meteorInt);
+}
+
+/* --- фон --- */
+const cv=$('bg'),cx=cv.getContext('2d');let stars=[],cw=0,ch2=0;
+function resize(){
+  const r=window.devicePixelRatio>1.5?2:1;cw=cv.clientWidth;ch2=cv.clientHeight;cv.width=cw*r;cv.height=ch2*r;cx.setTransform(r,0,0,r,0,0);
+  stars=Array.from({length:70},()=>({x:Math.random()*cw,y:Math.random()*ch2,r:Math.random()*1.4+.3,s:Math.random()*2+.5,o:Math.random()*6}));
+}
+function setHue(){document.documentElement.style.setProperty('--h',(250+S.epoch*47)%360);}
+function draw(ts){
+  cx.clearRect(0,0,cw,ch2);
+  const hue=(250+S.epoch*47)%360;
+  const g=cx.createRadialGradient(cw/2,ch2/2,10,cw/2,ch2/2,Math.max(cw,ch2)*0.7);
+  g.addColorStop(0,'hsla('+hue+',60%,22%,.55)');g.addColorStop(1,'hsla('+hue+',60%,6%,0)');
+  cx.fillStyle=g;cx.fillRect(0,0,cw,ch2);
+  const t=ts/1000;
+  for(const s of stars){cx.globalAlpha=0.35+0.65*Math.abs(Math.sin(t*s.s+s.o));cx.fillStyle='#fff';cx.beginPath();cx.arc(s.x,s.y,s.r,0,6.3);cx.fill();}
+  cx.globalAlpha=1;
+  if(!document.hidden)requestAnimationFrame(draw);
+}
+window.addEventListener('resize',resize);
+document.addEventListener('gesturestart',e=>e.preventDefault());
+document.addEventListener('dblclick',e=>e.preventDefault());
+
+/* --- главный цикл --- */
+let lastT=_now(),sec1=0,saveT=0;
+function offlineReport(dt){
+  const r=applyOffline(dt);
+  checkUnlocks();
+  const ready=S.exs.filter(e=>_now()>=e.end).length;
+  if(dt>=60&&(r.gain>0||ready)){
+    modal('<div class="big">🌙</div><h2>С возвращением!</h2><p>Тебя не было '+fmtT(dt)+(dt>r.sec+1?' (засчитано до '+fmtT(r.sec)+')':'')+'.</p><p>Пока ты спал, телескопы собрали <b style="color:var(--gold)">'+fmt(r.gain)+'</b> пыли (эффективность '+Math.round(fx().offEff*100)+'%).</p>'+(ready?'<p>🧭 Экспедиции вернулись: '+ready+'. Забери награды!</p>':'')+'<p class="t">Лимит и эффективность растут от даров эпохи и созвездий.</p>');
+    ui.sfx('big');
+  }
+}
+function loop(){
+  const t=_now();let dt=(t-lastT)/1000;lastT=t;
+  if(dt<0)dt=0;
+  if(dt>60)offlineReport(dt);
+  else{tick(dt);autoBuy(dt);}
+  sec1+=dt;
+  if(sec1>=1){sec1=0;checkUnlocks();checkAch();renderTabs();
+    // tutorial
+    if(S.tut<TUT.length&&TUT[S.tut].d()){S.tut++;ui.sfx('ach');}
+    if(S.tut===3&&S.stats.meteors===0&&nextMet-_now()>8000)nextMet=_now()+4000;}
+  meteorTimer();
+  live();
+  saveT+=dt;if(saveT>=10){saveT=0;saveGame();}
+}
+function boot(){
+  const loaded=loadGame();
+  initTg();
+  ensureQuests();setHue();checkUnlocks();
+  resize();requestAnimationFrame(draw);
+  renderTabs();renderPanel(true);
+  const away=loaded?(_now()-S.last)/1000:0;
+  lastT=_now();
+  if(away>60)offlineReport(away);
+  else if(!loaded)modal('<div class="big">🔭</div><h2>Звездочёт</h2><p>Ты — хранитель маленькой обсерватории. Лови звёздную пыль, строй станции, отправляй экспедиции и открывай созвездия. Игра идёт и пока тебя нет!</p><p>Начни с касания светящейся звезды ⭐</p>');
+  setInterval(loop,100);
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden){saveGame();}
+    else{requestAnimationFrame(draw);}
+  });
+  window.addEventListener('pagehide',saveGame);
+  window.addEventListener('beforeunload',saveGame);
+}
+if(typeof document!=='undefined'&&document.getElementById&&document.getElementById('orb'))boot();
+</script>
+</body>
+</html>
